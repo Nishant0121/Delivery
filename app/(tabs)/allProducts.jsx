@@ -9,7 +9,8 @@ import {
   Platform,
   TouchableOpacity,
 } from "react-native";
-import products from "@/assets/product.json"; // Assuming products is an array of products
+import productData from "../../assets/products.json"; // Assuming this is your new product data
+import stockData from "../../assets/stock.json"; // Assuming this is your new stock data
 import { useRouter } from "expo-router";
 
 const ITEMS_PER_PAGE = 20; // Number of items to load per page
@@ -19,8 +20,6 @@ export default function AllProducts() {
 
   // State to hold currently displayed products
   const [displayedProducts, setDisplayedProducts] = useState([]);
-
-  // State to manage loading state
   const [loading, setLoading] = useState(false);
 
   // Effect to load the initial set of products
@@ -34,11 +33,23 @@ export default function AllProducts() {
 
     setLoading(true);
     // Get the next set of products
-    const nextProducts = products.slice(
+    const nextProducts = productData.slice(
       displayedProducts.length,
       displayedProducts.length + ITEMS_PER_PAGE
     );
-    setDisplayedProducts((prev) => [...prev, ...nextProducts]); // Add new products to the displayed list
+
+    // Add stock information to the products
+    const updatedProducts = nextProducts.map((product) => {
+      const stockInfo = stockData.find(
+        (stock) => stock["Product ID"] === product["Product ID"]
+      );
+      return {
+        ...product,
+        inStock: stockInfo ? stockInfo["Stock Available"] === "TRUE" : false, // Determine stock status
+      };
+    });
+
+    setDisplayedProducts((prev) => [...prev, ...updatedProducts]); // Add new products to the displayed list
     setLoading(false);
   };
 
@@ -53,9 +64,10 @@ export default function AllProducts() {
       style={styles.productCard}
     >
       <Image source={{ uri: item.image }} style={styles.productImage} />
-      <Text style={styles.productName}>{item.name}</Text>
-      <Text style={styles.productDescription}>{item.description}</Text>
-      <Text style={styles.productPrice}>${item.price.toFixed(2)}</Text>
+      <Text style={styles.productName}>{item["Product Name"]}</Text>
+      <Text style={styles.productPrice}>
+        ${parseFloat(item["Price"]).toFixed(2)}
+      </Text>
       <Text style={styles.stockText}>
         {item.inStock ? "In Stock" : "Out of Stock"}
       </Text>
@@ -67,7 +79,7 @@ export default function AllProducts() {
       <FlatList
         data={displayedProducts}
         renderItem={renderProductItem}
-        keyExtractor={(item) => item.id.toString()}
+        keyExtractor={(item) => item["Product ID"].toString()}
         showsVerticalScrollIndicator={false}
         numColumns={Platform.OS === "android" ? 2 : 3}
         onEndReached={loadMoreProducts} // Load more products when reaching the end
@@ -86,19 +98,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "flex-start",
     backgroundColor: "#fff",
-    padding: 10, // Added padding for better spacing
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: "bold",
-    color: "#333",
-    marginVertical: 10,
-  },
-  separator: {
-    marginVertical: 5,
-    height: 1,
-    width: "80%",
-    backgroundColor: "#ccc",
+    padding: 10,
   },
   productCard: {
     backgroundColor: "#fff",
@@ -112,16 +112,16 @@ const styles = StyleSheet.create({
     },
     shadowOpacity: 0.1,
     shadowRadius: 4,
-    elevation: 3, // Android shadow
+    elevation: 3,
     alignItems: "center",
-    width: "48%", // Adjust width for two columns (48% for margin)
-    marginHorizontal: "1%", // Add horizontal margin for spacing
+    width: "48%",
+    marginHorizontal: "1%",
   },
   productImage: {
     width: "100%",
     height: 150,
     borderRadius: 8,
-    resizeMode: "contain", // Maintain aspect ratio
+    resizeMode: "contain",
   },
   productName: {
     fontSize: 18,
@@ -129,20 +129,14 @@ const styles = StyleSheet.create({
     marginVertical: 5,
     color: "#333",
   },
-  productDescription: {
-    fontSize: 14,
-    color: "#666",
-    textAlign: "center",
-    marginBottom: 5,
-  },
   productPrice: {
     fontSize: 16,
     fontWeight: "bold",
-    color: "#2a9d8f", // A pleasant color for price
+    color: "#2a9d8f",
   },
   stockText: {
     fontSize: 12,
-    color: "#e76f51", // A color for stock status
+    color: "#e76f51",
   },
   loadingIndicator: {
     marginVertical: 20,

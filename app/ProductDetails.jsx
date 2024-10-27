@@ -10,7 +10,6 @@ import {
 } from "react-native";
 import { useGlobalSearchParams, useRouter } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-
 import deliveryPartnersData from "../assets/pincode.json"; // Assume delivery partners data is stored here
 
 const ProductDetails = () => {
@@ -72,7 +71,7 @@ const ProductDetails = () => {
       const existingCart = await AsyncStorage.getItem("cart");
       const cart = existingCart ? JSON.parse(existingCart) : [];
       const existingProductIndex = cart.findIndex(
-        (item) => item.id === parsedProduct.id
+        (item) => item["Product ID"] === parsedProduct["Product ID"]
       );
 
       if (existingProductIndex !== -1) {
@@ -83,14 +82,17 @@ const ProductDetails = () => {
       }
 
       await AsyncStorage.setItem("cart", JSON.stringify(cart));
-      console.log(`${parsedProduct.name} added to cart. Current cart:`, cart);
+      console.log(
+        `${parsedProduct["Product Name"]} added to cart. Current cart:`,
+        cart
+      );
     } catch (error) {
       console.error("Failed to add to cart:", error);
     }
   };
 
   const handleCheckout = () => {
-    if (parsedProduct.inStock === false) {
+    if (!parsedProduct["inStock"]) {
       Alert.alert("Out of Stock", "Sorry, this product is out of stock.");
       return;
     }
@@ -117,9 +119,13 @@ const ProductDetails = () => {
   };
 
   const handleBuyNow = () => {
+    if (pincode === "") {
+      Alert.alert("Enter Pincode", "Please enter your pincode.");
+      return;
+    }
     router.push({
       pathname: "/BuyProduct",
-      params: { product: product },
+      params: { product: JSON.stringify(parsedProduct) }, // Ensure the product is passed correctly
     });
   };
 
@@ -139,8 +145,10 @@ const ProductDetails = () => {
           style={styles.productImage}
         />
       )}
-      <Text style={styles.title}>{parsedProduct.name}</Text>
-      <Text style={styles.price}>${parsedProduct.price.toFixed(2)}</Text>
+      <Text style={styles.title}>{parsedProduct["Product Name"]}</Text>
+      <Text style={styles.price}>
+        ${parseFloat(parsedProduct["Price"]).toFixed(2)}
+      </Text>
       <Text style={styles.description}>{parsedProduct.description}</Text>
 
       <View style={styles.inputContainer}>
@@ -148,7 +156,7 @@ const ProductDetails = () => {
           style={styles.input}
           placeholder="Enter your Pincode"
           value={pincode}
-          onChangeText={(text) => setPincode(text)}
+          onChangeText={setPincode}
           keyboardType="numeric"
         />
         <TouchableOpacity style={styles.checkButton} onPress={handleCheckout}>
@@ -159,7 +167,7 @@ const ProductDetails = () => {
       {/* Conditional rendering of the countdown */}
       {availablePartners.includes("Provider A") && (
         <>
-          <Text style={styles.countdown}>Deliver today if ordered in :</Text>
+          <Text style={styles.countdown}>Deliver today if ordered in:</Text>
           <Text
             style={styles.countdown}
           >{`${countdown.hours}h ${countdown.minutes}m ${countdown.seconds}s`}</Text>
@@ -183,9 +191,7 @@ const ProductDetails = () => {
           <Text style={styles.cartbuttonText}>Add to Cart</Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.button} onPress={handleBuyNow}>
-          <Text style={styles.buttonText}>
-            {pincode ? "Buy Now" : "Check Availability"}
-          </Text>
+          <Text style={styles.buttonText}>Buy Now</Text>
         </TouchableOpacity>
       </View>
     </View>

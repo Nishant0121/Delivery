@@ -15,6 +15,7 @@ import { router } from "expo-router";
 export default function CartScreen() {
   const [cartItems, setCartItems] = useState([]);
 
+  // Function to fetch cart items from AsyncStorage
   const fetchCartItems = async () => {
     try {
       const cart = await AsyncStorage.getItem("cart");
@@ -32,9 +33,12 @@ export default function CartScreen() {
     }, [])
   );
 
-  const handleRemoveItem = async (itemId) => {
+  // Function to handle removal of items from the cart
+  const handleRemoveItem = async (productId) => {
     try {
-      const updatedCart = cartItems.filter((item) => item.id !== itemId);
+      const updatedCart = cartItems.filter(
+        (item) => item["Product ID"] !== productId
+      );
       setCartItems(updatedCart);
       await AsyncStorage.setItem("cart", JSON.stringify(updatedCart));
       Alert.alert("Item removed from cart.");
@@ -43,6 +47,7 @@ export default function CartScreen() {
     }
   };
 
+  // Function to render each cart item
   const renderItem = ({ item }) => (
     <TouchableOpacity
       onPress={() =>
@@ -55,13 +60,15 @@ export default function CartScreen() {
     >
       <Image source={{ uri: item.image }} style={styles.productImage} />
       <View style={styles.infoContainer}>
-        <Text style={styles.productName}>{item.name}</Text>
-        <Text style={styles.productPrice}>${item.price.toFixed(2)}</Text>
+        <Text style={styles.productName}>{item["Product Name"]}</Text>
+        <Text style={styles.productPrice}>
+          ${parseFloat(item["Price"]).toFixed(2)}
+        </Text>
         <Text style={styles.productQuantity}>Quantity: {item.quantity}</Text>
       </View>
       <TouchableOpacity
         style={styles.removeButton}
-        onPress={() => handleRemoveItem(item.id)}
+        onPress={() => handleRemoveItem(item["Product ID"])}
       >
         <Text style={styles.removeButtonText}>Remove</Text>
       </TouchableOpacity>
@@ -74,7 +81,7 @@ export default function CartScreen() {
         <FlatList
           data={cartItems}
           renderItem={renderItem}
-          keyExtractor={(item) => item.id.toString()}
+          keyExtractor={(item) => item["Product ID"].toString()}
         />
       ) : (
         <Text style={styles.emptyCartText}>Your cart is empty.</Text>
@@ -83,6 +90,7 @@ export default function CartScreen() {
   );
 }
 
+// Styles for the component
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -146,5 +154,15 @@ const styles = StyleSheet.create({
   removeButtonText: {
     color: "#fff",
     fontWeight: "bold",
+  },
+  cartbutton: {
+    backgroundColor: "transparent",
+    borderColor: "#2a9d8f",
+    borderWidth: 2,
+    padding: 15,
+    borderRadius: 5,
+    flex: 1,
+    marginHorizontal: 5,
+    alignItems: "center",
   },
 });

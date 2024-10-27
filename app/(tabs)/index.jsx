@@ -1,16 +1,28 @@
 import React, { useCallback } from "react";
-import { StyleSheet, FlatList, Image, TouchableOpacity } from "react-native";
+import {
+  StyleSheet,
+  FlatList,
+  Image,
+  TouchableOpacity,
+  Button,
+} from "react-native";
 import { Text, View } from "@/components/Themed";
 import { useRouter } from "expo-router";
-import featuredProducts from "@/assets/product.json";
+import featuredProducts from "@/assets/products.json"; // Assuming the products JSON has the updated structure
+import stockData from "@/assets/stock.json"; // Assuming this is your stock data
 
 // Memoized Product Item Component
 const ProductItem = React.memo(({ item, onPress }) => {
   return (
     <TouchableOpacity style={styles.productCard} onPress={onPress}>
       <Image source={{ uri: item.image }} style={styles.productImage} />
-      <Text style={styles.productName}>{item.name}</Text>
-      <Text style={styles.productPrice}>${item.price.toFixed(2)}</Text>
+      <Text style={styles.productName}>{item["Product Name"]}</Text>
+      <Text style={styles.productPrice}>
+        ${parseFloat(item["Price"]).toFixed(2)}
+      </Text>
+      <Text style={styles.stockText}>
+        {item.inStock ? "In Stock" : "Out of Stock"}
+      </Text>
     </TouchableOpacity>
   );
 });
@@ -24,6 +36,17 @@ export default function HomeScreen() {
     { id: "2", title: "Clothing", icon: "https://via.placeholder.com/80" },
     { id: "3", title: "Electronics", icon: "https://via.placeholder.com/80" },
   ];
+
+  // Merge stock availability with product data
+  const featuredProductsWithStock = featuredProducts.map((product) => {
+    const stockInfo = stockData.find(
+      (stock) => stock["Product ID"] === product["Product ID"]
+    );
+    return {
+      ...product,
+      inStock: stockInfo ? stockInfo["Stock Available"] === "TRUE" : false, // Determine stock status
+    };
+  });
 
   // Callback for rendering category items
   const renderCategoryItem = useCallback(
@@ -78,10 +101,10 @@ export default function HomeScreen() {
 
       <Text style={styles.title}>Featured Products</Text>
       <FlatList
-        data={featuredProducts.slice(0, 10)} // Only take the first 10 products
+        data={featuredProductsWithStock.slice(0, 10)} // Only take the first 10 products with stock info
         horizontal
         renderItem={renderProductItem}
-        keyExtractor={(item) => item.id}
+        keyExtractor={(item) => item["Product ID"].toString()} // Use Product ID as key
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={styles.productList}
       />
@@ -162,5 +185,9 @@ const styles = StyleSheet.create({
   productPrice: {
     fontSize: 16,
     color: "#2a9d8f",
+  },
+  stockText: {
+    fontSize: 14,
+    color: "#e76f51", // Color for stock status
   },
 });
